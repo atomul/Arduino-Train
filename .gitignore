@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+*.suo
+*.db
+*.ipch
+Tunnel/Train_Tunnel/__vm/
+Tunnel/Train_Tunnel/obj/
