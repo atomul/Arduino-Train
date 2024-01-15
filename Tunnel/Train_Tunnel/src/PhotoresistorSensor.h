@@ -66,6 +66,8 @@ public:
 		m_settings.lightDifferenceThreshold = lightDifferenceThreshold;
 	}
 
+	uint8_t GetPin() { return m_settings.pin; }
+
 protected:
 	PhotoresistorSensorSettings m_settings;
 

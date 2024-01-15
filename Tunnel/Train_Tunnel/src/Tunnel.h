@@ -94,16 +94,14 @@ public:
 	Tunnel(const TunnelSettings& settings);
 	
 	void Update();
+	void HandleTrainTunnelState();
 
 	virtual void RegisterTunnelObserver(ITunnelObserver* tunnelObserver);
 
 	void TurnOnLights();
 	void TurnOffLights();
 	
-	void StartStopMonitoringTunnelEntrances(bool shouldMonitorTunnelEntrances)
-	{
-		m_shouldMonitorTunnelEntrances = shouldMonitorTunnelEntrances;
-	}
+	void StartStopMonitoringTunnelEntrances(bool shouldMonitorTunnelEntrances);
 
 	// Proximity Sensor inferface
 	//PhotoresistorSensor::IPhotoresistorSensorObserver::PhotoresistorSensorEventInfo a;
@@ -126,6 +124,10 @@ protected:
 private:
 	bool m_shouldMonitorTunnelEntrances;
 	TunnelSettings m_tunnelSettings;
+
+	bool m_trainNearTunnelEntrance;
+	bool m_trainNearTunnelExit;
+	bool m_trainPassedTunnelExit;
 
 	ProximitySensor* m_proximitySensorEntrance;
 	ProximitySensor* m_proximitySensorExit;

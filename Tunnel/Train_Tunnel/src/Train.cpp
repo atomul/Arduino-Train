@@ -1,12 +1,15 @@
 #include "Train.h"
 
 #include <Arduino.h>
+#include <Servo	>
 #include <stdint.h>
 
 Train::Train()
 {
 	SetupControlCenter();
 	SetupTunnel();
+
+	lastLightDifferenceThresholdPrinted = 0;
 }
 
 void Train::SetupControlCenter()
@@ -30,7 +33,7 @@ void Train::SetupTunnel()
 
 	PhotoresistorSensor::PhotoresistorSensorSettings photoresistorSettings;
 	photoresistorSettings.pin = A0;
-	photoresistorSettings.eventMode = PhotoresistorSensor::PHOTORESISTOR_EVENT_MODE::DISABLED;
+	photoresistorSettings.eventMode = PhotoresistorSensor::PHOTORESISTOR_EVENT_MODE::AND_MODE;
 	photoresistorSettings.lightDifferenceThreshold = 300;
 	photoresistorSettings.readTimeInterval = 100;
 	tunnelSettings.photoresistorSensorSettings_entrance = photoresistorSettings;
@@ -40,7 +43,7 @@ void Train::SetupTunnel()
 
 	m_tunnel = new Tunnel(tunnelSettings);
 	m_tunnel->RegisterTunnelObserver(this);
-	m_tunnel->StartStopMonitoringTunnelEntrances(true);
+	m_tunnel->StartStopMonitoringTunnelEntrances(false);
 }
 
 void Train::Update()
@@ -59,6 +62,16 @@ void Train::OnSwitchLightsOff()
 	m_tunnel->TurnOffLights();
 }
 
+void Train::OnSwitchTunnelDetectionOn()
+{
+	m_tunnel->StartStopMonitoringTunnelEntrances(true);
+}
+
+void Train::OnSwitchTunnelDetectionOff()
+{
+	m_tunnel->StartStopMonitoringTunnelEntrances(false);
+}
+
 void Train::OnLightsOverrideChanged(bool areLightsOverridden)
 {
 	if (areLightsOverridden)
@@ -73,7 +86,18 @@ void Train::OnLightsOverrideChanged(bool areLightsOverridden)
 
 void Train::OnLightSensitivityChanged(unsigned short int lightDifferenceThreshold)
 {
+	unsigned short int difference = 0;
+	if (lastLightDifferenceThresholdPrinted > lightDifferenceThreshold) difference = lastLightDifferenceThresholdPrinted - lightDifferenceThreshold;
+	else difference = lightDifferenceThreshold - lastLightDifferenceThresholdPrinted;
+	if (difference >= 50)
+	{
+		String str = "Tunnel settings - light sensitivity:\"" + String(lightDifferenceThreshold) + String("\"");
+		Serial.println(str);
+		lastLightDifferenceThresholdPrinted = lightDifferenceThreshold;
+	}
+
 	m_tunnel->ChangeSettings_PhotoresistorEntrance_LightDifferenceThreshold(lightDifferenceThreshold);
+	m_tunnel->ChangeSettings_PhotoresistorExit_LightDifferenceThreshold(lightDifferenceThreshold);
 }
 
 void Train::OnChangeTrainDetectionMode()

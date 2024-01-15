@@ -20,7 +20,6 @@ Button::Button(uint8_t inputPin, unsigned long holdThreshold)
 {
 	m_pin = inputPin;
 	pinMode(m_pin, INPUT);
-	Serial.println(m_holdThreshold);
 }
 
 Button::~Button()
@@ -61,9 +60,12 @@ void Button::Update()
 		{
 			SendEvent(ButtonEventInfo(BUTTON_EVENT_TYPE::BUTTON_UP));
 
-			m_numberOfClicks++;
-			m_needToSendClicks = true;
+			//Sometimes after holding button, it only sends 1 click
+			/*
 			m_lastClick = currentTime;
+			m_needToSendClicks = true;
+			m_numberOfClicks++;
+			//*/
 
 			if (m_isHolding == true)
 			{
@@ -71,8 +73,16 @@ void Button::Update()
 				m_isHolding = false;
 				sentHold == true;
 				m_needToSendClicks = false; // if it's a hold it's not a click anymore
-				Serial.println("Sent Hold");
-			}			
+				m_numberOfClicks = 0;
+			}
+			///*
+			else
+			{
+				m_lastClick = currentTime;
+				m_needToSendClicks = true;
+				m_numberOfClicks++;
+			}
+			//*/
 		}
 	}
 
@@ -82,6 +92,7 @@ void Button::Update()
 		{
 			ButtonEventInfo buttonEventInfo = ButtonEventInfo(BUTTON_EVENT_TYPE::BUTTON_CLICKS);
 			buttonEventInfo.m_numberOfClicks = m_numberOfClicks;
+			Serial.println("Button clicks: " + String(m_numberOfClicks) + " " + String(currentTime - m_lastClick) + " " + String(currentTime) + " " + String(m_lastClick));
 			SendEvent(buttonEventInfo);
 
 			if (m_numberOfClicks == 1)
@@ -95,7 +106,7 @@ void Button::Update()
 
 			m_numberOfClicks = 0;
 			m_needToSendClicks = false;
-			m_lastClick = 0;
+			m_lastClick = currentTime;
 		}
 	}
 

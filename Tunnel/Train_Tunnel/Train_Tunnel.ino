@@ -13,6 +13,7 @@
   by Scott Fitzgerald
  */
 
+#include <Servo.h>
 #include "src/Tank.h"
 #include "src/Train.h"
 
@@ -21,7 +22,11 @@ Train* k_train;
 
 // the setup function runs once when you press reset or power the board
 void setup() {
+	Serial.println("");
+	Serial.println("--------------------");
 	Serial.println("Starting program.");
+	Serial.println("--------------------");
+
 	//k_tank = new Tank();
 	k_train = new Train();
 }

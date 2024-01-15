@@ -13,3 +13,16 @@ bool IsDigitalPin(uint8_t pin)
 
 	return false;
 }
+
+bool IsThresholdReached(int value1, int value2, int threshold)
+{
+	int difference = 0;
+	if (value1 > value2) difference = value1 - value2;
+	else difference = value2 - value1;
+	if (difference >= threshold)
+	{
+		return true;
+	}
+
+	return false;
+}

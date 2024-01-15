@@ -10,6 +10,9 @@ Tunnel::Tunnel(const TunnelSettings& tunnelSettings)
 	, m_shouldMonitorTunnelEntrances(false)
 	, m_tunnelObserver(NULL)
 	, m_trainTunnelState(TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL)
+	, m_trainNearTunnelEntrance(false)
+	, m_trainNearTunnelExit(false)
+	, m_trainPassedTunnelExit(false)
 {
 	m_tunnelSettings = tunnelSettings;
 
@@ -52,6 +55,66 @@ void Tunnel::Update()
 				break;
 			}
 		}
+
+		HandleTrainTunnelState();
+	}
+}
+
+void Tunnel::HandleTrainTunnelState()
+{
+	switch (m_trainTunnelState)
+	{
+		case TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL:
+		{
+			// should I just set in "OnProximityChanged" a variable m_trainApproachingTunnelEntrance = true and test it out here and change the state here so all logic is done here?
+			if (m_trainNearTunnelEntrance)
+			{
+				m_trainNearTunnelEntrance = false;
+				ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_APROACHING_TUNNEL_ENTRANCE);
+			}
+
+			break;
+		}
+		case TRAIN_TUNNEL_STATE::TRAIN_APROACHING_TUNNEL_ENTRANCE:
+		{
+			if (m_tunnelSettings.lightMode == TUNNEL_LIGHT_MODE::AUTOMATIC_TRAIN_DETECTION)
+			{
+				TurnOnLights();
+			}
+			ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL);
+			break;
+		}
+		case TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL:
+		{
+			if (m_trainNearTunnelExit)
+			{
+				m_trainNearTunnelExit = false;
+				ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_EXITING_TUNNEL);
+			}
+
+
+			break;
+		}
+		case TRAIN_TUNNEL_STATE::TRAIN_EXITING_TUNNEL:
+		{
+			if (m_trainPassedTunnelExit)
+			{
+				m_trainPassedTunnelExit = false;
+				ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_EXITED_TUNNEL);
+			}
+
+			break;
+		}
+		case TRAIN_TUNNEL_STATE::TRAIN_EXITED_TUNNEL:
+		{
+			if (m_tunnelSettings.lightMode == TUNNEL_LIGHT_MODE::AUTOMATIC_TRAIN_DETECTION)
+			{
+				TurnOffLights();
+			}
+			ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL);
+
+			break;
+		}
 	}
 }
 
@@ -92,6 +155,14 @@ void Tunnel::ChangeSettings_TrainDetectionMode(TRAIN_DETECTION_MODE trainDetecti
 void Tunnel::ChangeSettings_TunnelLightMode(TUNNEL_LIGHT_MODE lightMode)
 {
 	m_tunnelSettings.lightMode = lightMode;
+	if (lightMode == TUNNEL_LIGHT_MODE::AUTOMATIC_TRAIN_DETECTION)
+	{
+		Serial.println("Tunnel light detection changed to \"automatic light detection\" mode");
+	}
+	else if (lightMode == TUNNEL_LIGHT_MODE::MANUAL)
+	{
+		Serial.println("Tunnel light detection changed to \"manual\" mode");
+	}
 }
 
 void Tunnel::ChangeSettings_PhotoresistorEntrance_LightDifferenceThreshold(unsigned short int lightDifferenceThreshold)
@@ -107,43 +178,33 @@ void Tunnel::ChangeSettings_PhotoresistorExit_LightDifferenceThreshold(unsigned 
 void Tunnel::ChangeTunnelStateState(TRAIN_TUNNEL_STATE tunnelState)
 {
 	m_trainTunnelState = tunnelState;
-	Serial.print("Tunnel state changed: \"");
+	String printStr = "Tunnel state changed: \"";
 
 	switch (tunnelState)
 	{
 	case TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL:
 	{
-		Serial.print("TRAIN_OUTSIDE_TUNNEL");
+		printStr = printStr + "TRAIN_OUTSIDE_TUNNEL";
 		break;
 	}
 	case TRAIN_TUNNEL_STATE::TRAIN_APROACHING_TUNNEL_ENTRANCE:
 	{
-		Serial.print("TRAIN_APROACHING_TUNNEL_ENTRANCE");
-		
-		if (m_tunnelSettings.lightMode == TUNNEL_LIGHT_MODE::AUTOMATIC_TRAIN_DETECTION)
-		{
-			TurnOnLights();
-		}
-
+		printStr = printStr + "TRAIN_APROACHING_TUNNEL_ENTRANCE";
 		break;
 	}
 	case TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL:
 	{
-		Serial.print("TRAIN_IN_TUNNEL");
+		printStr = printStr + "TRAIN_IN_TUNNEL";
 		break;
 	}
 	case TRAIN_TUNNEL_STATE::TRAIN_EXITING_TUNNEL:
 	{
-		Serial.print("TRAIN_EXITING_TUNNEL");
+		printStr = printStr + "TRAIN_EXITING_TUNNEL";
 		break;
 	}
 	case TRAIN_TUNNEL_STATE::TRAIN_EXITED_TUNNEL:
 	{
-		Serial.print("TRAIN_EXITED_TUNNEL");
-		if (m_tunnelSettings.lightMode == TUNNEL_LIGHT_MODE::AUTOMATIC_TRAIN_DETECTION)
-		{
-			TurnOffLights();
-		}
+		printStr = printStr + "TRAIN_EXITED_TUNNEL";
 		break;
 	}
 	}
@@ -152,8 +213,8 @@ void Tunnel::ChangeTunnelStateState(TRAIN_TUNNEL_STATE tunnelState)
 	eventInfo.state = m_trainTunnelState;
 	SendEvent(eventInfo);
 
-	Serial.print("\"");
-	Serial.println("");
+	printStr = printStr + "\"";
+	Serial.println(printStr);
 }
 
 void Tunnel::OnProximityChanged(bool hasObstacle, uint8_t pin)
@@ -171,19 +232,10 @@ void Tunnel::OnProximityChanged(bool hasObstacle, uint8_t pin)
 			{
 				if (hasObstacle)
 				{
-					ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_APROACHING_TUNNEL_ENTRANCE);
+					m_trainNearTunnelEntrance = true;
 				}
 			}
 
-			break;
-		}
-		case TRAIN_TUNNEL_STATE::TRAIN_APROACHING_TUNNEL_ENTRANCE:
-		{
-			if (m_tunnelSettings.lightMode == TUNNEL_LIGHT_MODE::AUTOMATIC_TRAIN_DETECTION)
-			{
-				TurnOnLights();
-			}
-			ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL);
 			break;
 		}
 		case TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL:
@@ -192,7 +244,7 @@ void Tunnel::OnProximityChanged(bool hasObstacle, uint8_t pin)
 			{
 				if (hasObstacle)
 				{
-					ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_EXITING_TUNNEL);
+					m_trainNearTunnelExit = true;
 				}
 			}
 
@@ -204,15 +256,9 @@ void Tunnel::OnProximityChanged(bool hasObstacle, uint8_t pin)
 			{
 				if (!hasObstacle)
 				{
-					ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_EXITED_TUNNEL);
+					m_trainPassedTunnelExit = true;
 				}
 			}
-
-			break;
-		}
-		case TRAIN_TUNNEL_STATE::TRAIN_EXITED_TUNNEL:
-		{
-			ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL);
 
 			break;
 		}
@@ -230,28 +276,24 @@ void Tunnel::OnLuminosityChanged(const PhotoresistorSensor::IPhotoresistorSensor
 	{
 		case TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL:
 		{
-			if (eventInfo.pin == m_proximitySensorEntrance->GetPin())
+			if (eventInfo.pin == m_photoresistorSensorEntrance->GetPin())
 			{
+				Serial.println(" " + String(eventInfo.pin) + " " + String((int)eventInfo.lightChangeType));
 				if (eventInfo.lightChangeType == PhotoresistorSensor::PHOTORESISTOR_LIGHT_CHANGE::DARKENED)
 				{
-					ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_APROACHING_TUNNEL_ENTRANCE);
+					m_trainNearTunnelEntrance = true;
 				}
 			}
 
 			break;
 		}
-		case TRAIN_TUNNEL_STATE::TRAIN_APROACHING_TUNNEL_ENTRANCE:
-		{
-			ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL);
-			break;
-		}
 		case TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL:
 		{
-			if (eventInfo.pin == m_proximitySensorExit->GetPin())
+			if (eventInfo.pin == m_photoresistorSensorExit->GetPin())
 			{
 				if (eventInfo.lightChangeType == PhotoresistorSensor::PHOTORESISTOR_LIGHT_CHANGE::DARKENED)
 				{
-					ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_EXITING_TUNNEL);
+					m_trainNearTunnelExit = true;
 				}
 			}
 
@@ -259,19 +301,13 @@ void Tunnel::OnLuminosityChanged(const PhotoresistorSensor::IPhotoresistorSensor
 		}
 		case TRAIN_TUNNEL_STATE::TRAIN_EXITING_TUNNEL:
 		{
-			if (eventInfo.pin == m_proximitySensorExit->GetPin())
+			if (eventInfo.pin == m_photoresistorSensorExit->GetPin())
 			{
 				if (eventInfo.lightChangeType == PhotoresistorSensor::PHOTORESISTOR_LIGHT_CHANGE::BRIGHTENED)
 				{
-					ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_EXITED_TUNNEL);
+					m_trainPassedTunnelExit = true;
 				}
 			}
-
-			break;
-		}
-		case TRAIN_TUNNEL_STATE::TRAIN_EXITED_TUNNEL:
-		{
-			ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL);
 
 			break;
 		}
@@ -281,13 +317,26 @@ void Tunnel::OnLuminosityChanged(const PhotoresistorSensor::IPhotoresistorSensor
 void Tunnel::TurnOnLights()
 {
 	digitalWrite(m_tunnelSettings.pin_mosfet_gate_lights, HIGH);
-	Serial.println("Lights ON\"");
+	Serial.println("Lights ON");
 }
 
 void Tunnel::TurnOffLights()
 {
 	digitalWrite(m_tunnelSettings.pin_mosfet_gate_lights, LOW);
-	Serial.println("Lights OFF\"");
+	Serial.println("Lights OFF");
+}
+
+void Tunnel::StartStopMonitoringTunnelEntrances(bool shouldMonitorTunnelEntrances)
+{
+	m_shouldMonitorTunnelEntrances = shouldMonitorTunnelEntrances;
+	if (m_shouldMonitorTunnelEntrances)
+	{
+		Serial.println("Tunnel setting changed: START monitoring");
+	}
+	else
+	{
+		Serial.println("Tunnel setting changed: STOP monitoring");
+	}
 }
 
 void Tunnel::RegisterTunnelObserver(ITunnelObserver* tunnelObserver)

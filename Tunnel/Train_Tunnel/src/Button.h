@@ -90,7 +90,7 @@ protected:
 	unsigned long m_initialHoldTime;
 	bool m_isHolding = false;
 
-	unsigned int m_lastClick;
+	unsigned long m_lastClick;
 	unsigned long m_timeBetweenClicksThreshold;
 	uint8_t m_numberOfClicks;
 	bool m_needToSendClicks;

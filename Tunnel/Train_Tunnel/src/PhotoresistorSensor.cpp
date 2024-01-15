@@ -32,7 +32,7 @@ void PhotoresistorSensor::Update()
 		return;
 	}
 
-	int sensorValue = 0;
+	unsigned short int sensorValue = 0;
 	unsigned long currentTime = 0;
 	bool timeIntervalReached = false;
 	bool lightDifferenceThresholdReached = false;
@@ -52,13 +52,14 @@ void PhotoresistorSensor::Update()
 	}
 
 	sensorValue = ReadSensorValue();
+	if (m_lastSavedSensorValue == 0)
+	{
+		m_lastSavedSensorValue = sensorValue;
+	}
 
 	if (m_settings.lightDifferenceThreshold > 0)
 	{
-		if (
-			((sensorValue - m_lastSavedSensorValue) >= m_settings.lightDifferenceThreshold) ||
-			((m_lastSavedSensorValue - sensorValue) >= m_settings.lightDifferenceThreshold)
-			)
+		if (IsThresholdReached(sensorValue, m_lastSavedSensorValue, m_settings.lightDifferenceThreshold))
 		{
 			lightDifferenceThresholdReached = true;
 		}
@@ -90,7 +91,7 @@ void PhotoresistorSensor::Update()
 		eventInfo.luminosity = sensorValue;
 		eventInfo.lightChangeType = (sensorValue > m_lastSavedSensorValue) ? PHOTORESISTOR_LIGHT_CHANGE::DARKENED : PHOTORESISTOR_LIGHT_CHANGE::BRIGHTENED;
 		m_photoresistorSensorObserver->OnLuminosityChanged(eventInfo);
-		m_lastSavedSensorValue - sensorValue;
+		m_lastSavedSensorValue = sensorValue;
 		m_lastSavedTime = currentTime;
 	}
 }

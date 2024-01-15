@@ -13,6 +13,9 @@ public:
 	virtual void OnSwitchLightsOn() = 0;
 	virtual void OnSwitchLightsOff() = 0;
 
+	virtual void OnSwitchTunnelDetectionOn() = 0;
+	virtual void OnSwitchTunnelDetectionOff() = 0;
+
 	virtual void OnLightsOverrideChanged(bool areLightsOverridden) = 0;
 	virtual void OnLightSensitivityChanged(unsigned short int lightDifferenceThreshold) = 0;
 	virtual void OnChangeTrainDetectionMode() = 0;
@@ -40,11 +43,13 @@ private:
 	void OnThrottleChange(uint32_t speed, uint32_t throttleId) override final;
 
 private:
-	Button*	m_button;
+	Button*	m_buttonSettings;
+	Button* m_buttonEnableTunnelDetection;
 	Throttle* m_throttle;
 
 	IControlCenterObserver*	m_observer;
 
 	bool m_areLightsOverridden;
+	bool m_isTunnelDetectionOn;
 };
 

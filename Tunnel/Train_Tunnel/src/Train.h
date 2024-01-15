@@ -22,6 +22,9 @@ public:
 	void OnSwitchLightsOn() override;
 	void OnSwitchLightsOff() override;
 
+	void OnSwitchTunnelDetectionOn() override;
+	void OnSwitchTunnelDetectionOff() override;
+
 	void OnLightsOverrideChanged(bool areLightsOverridden) override;
 	void OnLightSensitivityChanged(unsigned short int lightDifferenceThreshold) override;
 	void OnChangeTrainDetectionMode() override;
@@ -32,4 +35,6 @@ public:
 private:
 	ControlCenter* m_controlCenter;
 	Tunnel* m_tunnel;
+
+	unsigned short int lastLightDifferenceThresholdPrinted = 0;
 };
