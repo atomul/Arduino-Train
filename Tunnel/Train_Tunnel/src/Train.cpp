@@ -1,13 +1,22 @@
 #include "Train.h"
 
 #include <Arduino.h>
-#include <Servo	>
+//#include <Servo	>
 #include <stdint.h>
+
+//Speed = map(sensorVal, 0, 1023, 0, 255);
+// map from one range to another.
+
+// H-Bridge / L293D with octocoupler
+// https://forum.arduino.cc/t/l293d-control-via-isp847-opto-isolator-problem/71953
+// https://www.youtube.com/watch?v=KXGSGzxefZc&ab_channel=element14presents
+// https://www.youtube.com/watch?v=Vm0k1yyVurQ&ab_channel=LewisLoflin
 
 Train::Train()
 {
 	SetupControlCenter();
 	SetupTunnel();
+	SetupTrackSections();
 
 	lastLightDifferenceThresholdPrinted = 0;
 }
@@ -25,7 +34,7 @@ void Train::SetupTunnel()
 	tunnelSettings.trainDetectionMode = Tunnel::TRAIN_DETECTION_MODE::PROXIMITY_SENSORS;
 	tunnelSettings.lightMode = Tunnel::TUNNEL_LIGHT_MODE::AUTOMATIC_TRAIN_DETECTION;
 	
-	tunnelSettings.pin_mosfet_gate_lights = 9;
+	tunnelSettings.pin_mosfet_gate_lights = 8;
 	
 	tunnelSettings.pin_proximitySensor_entrance = 3;
 	tunnelSettings.pin_proximitySensor_exit = 4;
@@ -46,10 +55,22 @@ void Train::SetupTunnel()
 	m_tunnel->StartStopMonitoringTunnelEntrances(false);
 }
 
+void Train::SetupTrackSections()
+{
+	HBridge_L293D::HBridge_L293D_Channel_Settings channelSettings;
+	channelSettings.enable = 9;
+	channelSettings.input1 = 6;
+	channelSettings.input2 = 7;
+
+	m_trackSection1.AssignHBridgeChannel(channelSettings);
+	m_trackSection1.SetTargetSpeedPercentage(0,0);
+}
+
 void Train::Update()
 {
 	m_tunnel->Update();
 	m_controlCenter->Update();
+	m_trackSection1.Update();
 }
 
 void Train::OnSwitchLightsOn()
@@ -103,6 +124,37 @@ void Train::OnLightSensitivityChanged(unsigned short int lightDifferenceThreshol
 void Train::OnChangeTrainDetectionMode()
 {
 	m_tunnel->ToggleSettings_TrainDetectionMode();
+}
+
+void Train::OnTestButtonClick()
+{
+	static bool s_isTrackSection1Enabled = false;
+	s_isTrackSection1Enabled = !s_isTrackSection1Enabled;
+
+	static bool s_isTrackSectionDirectionForward = true;
+
+	if (s_isTrackSection1Enabled)
+	{
+		Serial.println("OnTestButtonClick - enable");
+		m_trackSection1.Enable();
+		m_trackSection1.SetTargetSpeedPercentage(100, 7000);
+
+		if (s_isTrackSectionDirectionForward)
+		{
+			m_trackSection1.SetDirection(HBridgeMotorController::MotorDirection::MOTOR_DIRECTION_FORWARD);
+		}
+		else
+		{
+			m_trackSection1.SetDirection(HBridgeMotorController::MotorDirection::MOTOR_DIRECTION_BACKWARD);
+		}
+		s_isTrackSectionDirectionForward = !s_isTrackSectionDirectionForward;
+	}
+	else
+	{
+		Serial.println("OnTestButtonClick - disable");
+		m_trackSection1.SetTargetSpeedPercentage(0, 7000);
+		//m_trackSection1.Disable();
+	}
 }
 
 void Train::OnTunnelEvent(const Tunnel::TunnelEventInfo& eventInfo)

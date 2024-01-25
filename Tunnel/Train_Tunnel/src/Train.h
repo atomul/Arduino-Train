@@ -5,6 +5,10 @@
 #include "ControlCenter.h"
 #include "Tunnel.h"
 
+#include "HBridge.h"
+
+typedef HBridgeMotorController TrackSection;
+
 class Train
 	: public IControlCenterObserver
 	, public Tunnel::ITunnelObserver
@@ -15,6 +19,8 @@ public:
 
 	void SetupControlCenter();
 	void SetupTunnel();
+
+	void SetupTrackSections();
 
 	void Update();
 
@@ -29,6 +35,8 @@ public:
 	void OnLightSensitivityChanged(unsigned short int lightDifferenceThreshold) override;
 	void OnChangeTrainDetectionMode() override;
 
+	void OnTestButtonClick() override;
+
 	// Tunnel Observer Interface
 	void OnTunnelEvent(const Tunnel::TunnelEventInfo& eventInfo) override;
 
@@ -37,4 +45,6 @@ private:
 	Tunnel* m_tunnel;
 
 	unsigned short int lastLightDifferenceThresholdPrinted = 0;
+
+	TrackSection m_trackSection1;
 };

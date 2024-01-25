@@ -11,6 +11,8 @@ const uint8_t k_throttle_threshold = 2;
 
 const uint8_t k_pin_button_toggle_tunnel_detection = 5;
 
+const uint8_t k_pin_button_test = 13;
+
 bool IsButtonEnable(uint8_t buttonPin)
 {
 	return (k_pin_button_settings == buttonPin);
@@ -23,10 +25,12 @@ ControlCenter::ControlCenter()
 
 	m_buttonSettings = new Button(k_pin_button_settings, k_button_enable_holdThreshold);
 	m_buttonEnableTunnelDetection = new Button(k_pin_button_toggle_tunnel_detection, 60000);
+	m_buttonTest = new Button(k_pin_button_test, 60000);
 	m_throttle = new Throttle(k_pin_throttle_light_sensitivity, k_throttle_threshold);
 	
 	m_buttonSettings->RegisterButtonObserver(this);
 	m_buttonEnableTunnelDetection->RegisterButtonObserver(this);
+	m_buttonTest->RegisterButtonObserver(this);
 	m_throttle->RegisterObserver(this);
 }
 
@@ -38,6 +42,9 @@ ControlCenter::~ControlCenter()
 	delete m_buttonEnableTunnelDetection;
 	m_buttonEnableTunnelDetection = NULL;
 
+	delete m_buttonTest;
+	m_buttonTest = NULL;
+
 	delete m_throttle;
 	m_throttle = NULL;
 }
@@ -46,6 +53,7 @@ void ControlCenter::Update()
 {
 	m_buttonSettings->Update();
 	m_buttonEnableTunnelDetection->Update();
+	m_buttonTest->Update();
 	m_throttle->Update();
 }
 
@@ -60,7 +68,7 @@ void ControlCenter::OnButtonEvent(uint32_t buttonId, const ButtonEventInfo& butt
 	{
 		case BUTTON_EVENT_TYPE::BUTTON_SWITCH:
 		{
-			if (buttonId == k_pin_button_settings)
+			if (buttonId == m_buttonSettings->GetPin())
 			{
 				if (m_areLightsOverridden)
 				{
@@ -74,7 +82,7 @@ void ControlCenter::OnButtonEvent(uint32_t buttonId, const ButtonEventInfo& butt
 					}
 				}
 			}
-			else if (buttonId == k_pin_button_toggle_tunnel_detection)
+			else if (buttonId == m_buttonEnableTunnelDetection->GetPin())
 			{
 				m_isTunnelDetectionOn = !m_isTunnelDetectionOn;
 				if (m_isTunnelDetectionOn)
@@ -90,7 +98,18 @@ void ControlCenter::OnButtonEvent(uint32_t buttonId, const ButtonEventInfo& butt
 		}
 		case BUTTON_EVENT_TYPE::BUTTON_CLICKS:
 		{
-			if (buttonId == k_pin_button_settings)
+			Serial.println("Btn clicked:");
+			Serial.println(buttonId);
+			Serial.println(m_buttonTest->GetPin());
+			if (buttonId == m_buttonTest->GetPin())
+			{
+				if (buttonEventInfo.m_numberOfClicks == 1)
+				{
+					m_observer->OnTestButtonClick();
+				}
+			}
+
+			else if (buttonId == m_buttonSettings->GetPin())
 			{
 				if (buttonEventInfo.m_numberOfClicks == 2)
 				{

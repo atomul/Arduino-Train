@@ -62,6 +62,8 @@ public:
 	Button(const Button& rhs);
 	~Button();
 
+	uint8_t GetPin() { return m_pin; }
+
 	virtual void Update();
 
 	bool IsPressed();

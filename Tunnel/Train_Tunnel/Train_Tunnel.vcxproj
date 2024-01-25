@@ -46,6 +46,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="src\Button.cpp" />
+    <ClCompile Include="src\HBridge.cpp" />
+    <ClCompile Include="src\Online.h" />
     <ClCompile Include="src\PhotoresistorSensor.cpp" />
     <ClCompile Include="src\ProximitySensor.cpp" />
     <ClCompile Include="src\ControlCenter.cpp" />
@@ -63,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Button.h" />
+    <ClInclude Include="src\HBridge.h" />
     <ClInclude Include="src\PhotoresistorSensor.h" />
     <ClInclude Include="src\ProximitySensor.h" />
     <ClInclude Include="src\ControlCenter.h" />
@@ -77,7 +80,7 @@
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-    <IncludePath>C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\avr\\1.8.4\\cores\\arduino;C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\avr\\1.8.4\\variants\\standard;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\lib\gcc\avr\7.3.0\include;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\lib\gcc\avr\7.3.0\include-fixed;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\avr\include;C:\Program Files (x86)\Arduino\libraries\Servo\src</IncludePath>
+    <IncludePath>$(ProjectDir)..\Train_Tunnel;C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\avr\\1.8.4\\cores\\arduino;C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\avr\\1.8.4\\variants\\standard;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\lib\gcc\avr\7.3.0\include;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\lib\gcc\avr\7.3.0\include-fixed;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\avr\include</IncludePath>
     <RemoteCCompileToolExe>C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\bin\avr-g++</RemoteCCompileToolExe>
     <RemoteCppCompileToolExe>C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\bin\avr-g++</RemoteCppCompileToolExe>
     <ValidateArchitecture>false</ValidateArchitecture>
@@ -90,7 +93,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\avr\\1.8.4\\cores\\arduino;C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\avr\\1.8.4\\variants\\standard;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\lib\gcc\avr\7.3.0\include;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\lib\gcc\avr\7.3.0\include-fixed;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\avr\include;C:\Program Files (x86)\Arduino\libraries\Servo\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\Train_Tunnel;C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\avr\\1.8.4\\cores\\arduino;C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\hardware\\avr\\1.8.4\\variants\\standard;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\lib\gcc\avr\7.3.0\include;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\lib\gcc\avr\7.3.0\include-fixed;c:\users\petredaniel.puiu\appdata\local\arduino15\packages\arduino\tools\avr-gcc\7.3.0-atmel3.6.1-arduino7\avr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <GccToolChain>C:\\Users\\petredaniel.puiu\\AppData\\Local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\bin\avr-g++</GccToolChain>
       <CppLanguageStandard>gnu++11</CppLanguageStandard>
       <CLanguageStandard>gnu11</CLanguageStandard>

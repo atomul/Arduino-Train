@@ -43,6 +43,12 @@
     <ClCompile Include="src\Train.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Online.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HBridge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.Train_Tunnel.vsarduino.h">
@@ -73,6 +79,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Train.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\HBridge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

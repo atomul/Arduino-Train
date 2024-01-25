@@ -13,12 +13,15 @@
   by Scott Fitzgerald
  */
 
-#include <Servo.h>
-#include "src/Tank.h"
+//#include <Servo.h>
+//#include "src/Tank.h"
 #include "src/Train.h"
+#include "src/Online.h"
 
-Tank* k_tank;
+//Tank* k_tank;
 Train* k_train;
+
+Online::Train* k_train2 = new Online::Train();
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -29,10 +32,14 @@ void setup() {
 
 	//k_tank = new Tank();
 	k_train = new Train();
+
+	k_train2 = new Online::Train();
 }
 
 // the loop function runs over and over again forever
 void loop() {
 	//k_tank->Update();
 	k_train->Update();
+
+	k_train2->Update();
 }

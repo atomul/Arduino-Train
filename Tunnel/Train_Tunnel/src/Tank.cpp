@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-const uint8_t k_pin_mosfet_gate = 9;
+const uint8_t k_pin_mosfet_gate = 8;
 
 const uint8_t k_pin_photoresistor_entrance = A0;
 const uint8_t k_pin_photoresistor_exit = A1;

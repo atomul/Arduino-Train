@@ -52,9 +52,9 @@ public:
 	PhotoresistorSensor(const PhotoresistorSensorSettings& photoresistorSettings);
 	~PhotoresistorSensor();
 	;
-	virtual void Update();
+	void Update();
 
-	virtual void RegisterPhotoresistorSensorObserver(IPhotoresistorSensorObserver* observer)
+	void RegisterPhotoresistorSensorObserver(IPhotoresistorSensorObserver* observer)
 	{
 		m_photoresistorSensorObserver = observer;
 	}
