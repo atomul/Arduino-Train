@@ -6,8 +6,6 @@
 #include "PhotoresistorSensor.h"
 
 class Tunnel
-	: IProximitySensorObserver
-	, PhotoresistorSensor::IPhotoresistorSensorObserver
 {
 public:
 	enum class TUNNEL_LIGHT_MODE : uint8_t
@@ -43,12 +41,12 @@ public:
 		TunnelSettings()
 			: pin_mosfet_gate_lights(-1)
 
-			, photoresistorSensorSettings_entrance(PhotoresistorSensor::PhotoresistorSensorSettings())
-			, photoresistorSensorSettings_exit(PhotoresistorSensor::PhotoresistorSensorSettings())
+			//, photoresistorSensorSettings_entrance(PhotoresistorSensor::PhotoresistorSensorSettings())
+			//, photoresistorSensorSettings_exit(PhotoresistorSensor::PhotoresistorSensorSettings())
 
 			, pin_proximitySensor_entrance(-1)
 			, pin_proximitySensor_exit(-1)
-			, proximitySensorThresholdValue(0)
+			//, proximitySensorThresholdValue(0)
 
 			, trainDetectionMode(TRAIN_DETECTION_MODE::PROXIMITY_SENSORS)
 			, lightMode(TUNNEL_LIGHT_MODE::AUTOMATIC_TRAIN_DETECTION)
@@ -58,8 +56,8 @@ public:
 
 		uint8_t pin_mosfet_gate_lights;
 		
-		PhotoresistorSensor::PhotoresistorSensorSettings photoresistorSensorSettings_entrance;
-		PhotoresistorSensor::PhotoresistorSensorSettings photoresistorSensorSettings_exit;
+		//PhotoresistorSensor::PhotoresistorSensorSettings photoresistorSensorSettings_entrance;
+		//PhotoresistorSensor::PhotoresistorSensorSettings photoresistorSensorSettings_exit;
 
 		uint8_t pin_proximitySensor_entrance;
 		uint8_t pin_proximitySensor_exit;
@@ -80,6 +78,9 @@ public:
 		TRAIN_TUNNEL_STATE state;
 	};
 
+	using TunnelHandler = void(*)(void* context, const TunnelEventInfo& eventInfo);
+
+	/*
 	class ITunnelObserver
 	{
 		friend Tunnel;
@@ -89,14 +90,19 @@ public:
 	private:
 		virtual void OnTunnelEvent(const TunnelEventInfo& eventInfo) = 0;
 	};
+	//*/
 
 public:
-	Tunnel(const TunnelSettings& settings);
-	
+	Tunnel();
+
+	void SetSettings(const TunnelSettings& settings);
+	void SetListener(TunnelHandler handler, void* context);
+	void Setup();
+
 	void Update();
 	void HandleTrainTunnelState();
 
-	virtual void RegisterTunnelObserver(ITunnelObserver* tunnelObserver);
+	//virtual void RegisterTunnelObserver(ITunnelObserver* tunnelObserver);
 
 	void TurnOnLights();
 	void TurnOffLights();
@@ -105,14 +111,15 @@ public:
 
 	// Proximity Sensor inferface
 	//PhotoresistorSensor::IPhotoresistorSensorObserver::PhotoresistorSensorEventInfo a;
-	void OnProximityChanged(bool hasObstacle, uint8_t pin);
-	void OnLuminosityChanged(const PhotoresistorSensor::IPhotoresistorSensorObserver::PhotoresistorSensorEventInfo& eventInfo);
+	void OnProximityEvent(bool hasObstacle, uint8_t pin);
+	static void ProximitySensorEventThunk(void* context, const ProximitySensorInfo& info);
+	//void OnLuminosityChanged(const PhotoresistorSensor::IPhotoresistorSensorObserver::PhotoresistorSensorEventInfo& eventInfo);
 
 	void ToggleSettings_TrainDetectionMode();
 	void ChangeSettings_TrainDetectionMode(TRAIN_DETECTION_MODE trainDetectionMode);
 	void ChangeSettings_TunnelLightMode(TUNNEL_LIGHT_MODE lightMode);
-	void ChangeSettings_PhotoresistorEntrance_LightDifferenceThreshold(unsigned short int lightDifferenceThreshold);
-	void ChangeSettings_PhotoresistorExit_LightDifferenceThreshold(unsigned short int lightDifferenceThreshold);
+	//void ChangeSettings_PhotoresistorEntrance_LightDifferenceThreshold(unsigned short int lightDifferenceThreshold);
+	//void ChangeSettings_PhotoresistorExit_LightDifferenceThreshold(unsigned short int lightDifferenceThreshold);
 
 protected:
 	void SendEvent(const TunnelEventInfo& eventInfo);
@@ -129,13 +136,16 @@ private:
 	bool m_trainNearTunnelExit;
 	bool m_trainPassedTunnelExit;
 
-	ProximitySensor* m_proximitySensorEntrance;
-	ProximitySensor* m_proximitySensorExit;
+	ProximitySensor m_proximitySensorEntrance;
+	ProximitySensor m_proximitySensorExit;
 
-	PhotoresistorSensor* m_photoresistorSensorEntrance;
-	PhotoresistorSensor* m_photoresistorSensorExit;
+	//PhotoresistorSensor* m_photoresistorSensorEntrance;
+	//PhotoresistorSensor* m_photoresistorSensorExit;
 
-	ITunnelObserver* m_tunnelObserver;
+	//ITunnelObserver* m_tunnelObserver;
 
 	TRAIN_TUNNEL_STATE m_trainTunnelState;
+
+	void* m_context = nullptr;
+	TunnelHandler m_handler = nullptr;;
 };

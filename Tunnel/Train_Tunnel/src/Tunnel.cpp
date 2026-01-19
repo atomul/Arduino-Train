@@ -3,32 +3,55 @@
 #include <Arduino.h>
 
 #include "Utilities.h"
+#include "macro-logger/MacroLogger.h"
 
-Tunnel::Tunnel(const TunnelSettings& tunnelSettings)
-	: m_proximitySensorEntrance(NULL)
-	, m_proximitySensorExit(NULL)
+Tunnel::Tunnel()
+	: m_proximitySensorEntrance()
+	, m_proximitySensorExit()
 	, m_shouldMonitorTunnelEntrances(false)
-	, m_tunnelObserver(NULL)
 	, m_trainTunnelState(TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL)
 	, m_trainNearTunnelEntrance(false)
 	, m_trainNearTunnelExit(false)
 	, m_trainPassedTunnelExit(false)
+	, m_handler(nullptr)
+	, m_context(nullptr)
+{	
+}
+
+void Tunnel::SetSettings(const TunnelSettings& settings)
 {
-	m_tunnelSettings = tunnelSettings;
+	m_tunnelSettings = settings;
+}
 
-	m_proximitySensorEntrance = new ProximitySensor(tunnelSettings.pin_proximitySensor_entrance, tunnelSettings.proximitySensorThresholdValue);
-	m_proximitySensorEntrance->RegisterProximitySensorObserver(this);
+void Tunnel::SetListener(TunnelHandler handler, void* context)
+{
+	m_handler = handler;
+}
 
-	m_proximitySensorExit = new ProximitySensor(tunnelSettings.pin_proximitySensor_exit, tunnelSettings.proximitySensorThresholdValue);
-	m_proximitySensorExit->RegisterProximitySensorObserver(this);
+void Tunnel::Setup()
+{
+	ProximitySensorSettings settings;
+	settings.pin = m_tunnelSettings.pin_proximitySensor_entrance;
+	settings.threshold = m_tunnelSettings.proximitySensorThresholdValue;
 
+	m_proximitySensorEntrance.SetSettings(settings);
+	m_proximitySensorEntrance.SetListener(&Tunnel::ProximitySensorEventThunk, this);
+
+	settings.pin = m_tunnelSettings.pin_proximitySensor_exit;
+	m_proximitySensorExit.SetSettings(settings);
+	m_proximitySensorExit.SetListener(&Tunnel::ProximitySensorEventThunk, this);
+
+	//m_proximitySensorEntrance.Setup();
+	//m_proximitySensorExit.Setup();
+	/*
 	m_photoresistorSensorEntrance = new PhotoresistorSensor(tunnelSettings.photoresistorSensorSettings_entrance);
 	m_photoresistorSensorExit = new PhotoresistorSensor(tunnelSettings.photoresistorSensorSettings_exit);
 
 	m_photoresistorSensorEntrance->RegisterPhotoresistorSensorObserver(this);
 	m_photoresistorSensorExit->RegisterPhotoresistorSensorObserver(this);
+	//*/
 
-	pinMode(tunnelSettings.pin_mosfet_gate_lights, OUTPUT);
+	pinMode(m_tunnelSettings.pin_mosfet_gate_lights, OUTPUT);
 }
 
 bool Tunnel::TunnelSettings::AreSettingsValid()
@@ -44,16 +67,18 @@ void Tunnel::Update()
 		{
 			case TRAIN_DETECTION_MODE::PROXIMITY_SENSORS:
 			{
-				m_proximitySensorEntrance->Update();
-				m_proximitySensorExit->Update();
+				m_proximitySensorEntrance.Update();
+				m_proximitySensorExit.Update();
 				break;
 			}
+			/*
 			case TRAIN_DETECTION_MODE::PHOTORESISTOR_SENSORS:
 			{
 				m_photoresistorSensorEntrance->Update();
 				m_photoresistorSensorExit->Update();
 				break;
 			}
+			//*/
 		}
 
 		HandleTrainTunnelState();
@@ -137,18 +162,18 @@ void Tunnel::ChangeSettings_TrainDetectionMode(TRAIN_DETECTION_MODE trainDetecti
 		m_tunnelSettings.trainDetectionMode = trainDetectionMode;
 		if (m_tunnelSettings.trainDetectionMode == TRAIN_DETECTION_MODE::PROXIMITY_SENSORS)
 		{
-			Serial.println("Train detection mode changed to PROXIMITY sensors");
+			//Serial.println("Train detection mode changed to PROXIMITY sensors");
 		}
 		else if (m_tunnelSettings.trainDetectionMode == TRAIN_DETECTION_MODE::PHOTORESISTOR_SENSORS)
 		{
-			Serial.println("Train detection mode changed to PHOTORESISTOR sensors");
+			//Serial.println("Train detection mode changed to PHOTORESISTOR sensors");
 		}
 
 		ChangeTunnelStateState(TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL);
 	}
 	else
 	{
-		Serial.println("Train detection mode NOT changed. Already in this mode.");
+		//Serial.println("Train detection mode NOT changed. Already in this mode.");
 	}
 }
 
@@ -157,14 +182,15 @@ void Tunnel::ChangeSettings_TunnelLightMode(TUNNEL_LIGHT_MODE lightMode)
 	m_tunnelSettings.lightMode = lightMode;
 	if (lightMode == TUNNEL_LIGHT_MODE::AUTOMATIC_TRAIN_DETECTION)
 	{
-		Serial.println("Tunnel light detection changed to \"automatic light detection\" mode");
+		//Serial.println("Tunnel light detection changed to \"automatic light detection\" mode");
 	}
 	else if (lightMode == TUNNEL_LIGHT_MODE::MANUAL)
 	{
-		Serial.println("Tunnel light detection changed to \"manual\" mode");
+		//Serial.println("Tunnel light detection changed to \"manual\" mode");
 	}
 }
 
+/*
 void Tunnel::ChangeSettings_PhotoresistorEntrance_LightDifferenceThreshold(unsigned short int lightDifferenceThreshold)
 {
 	m_photoresistorSensorEntrance->ChangeSettings_LightDifferenceThreshold(lightDifferenceThreshold);
@@ -174,37 +200,37 @@ void Tunnel::ChangeSettings_PhotoresistorExit_LightDifferenceThreshold(unsigned 
 {
 	m_photoresistorSensorExit->ChangeSettings_LightDifferenceThreshold(lightDifferenceThreshold);
 }
+//*/
 
 void Tunnel::ChangeTunnelStateState(TRAIN_TUNNEL_STATE tunnelState)
 {
 	m_trainTunnelState = tunnelState;
-	String printStr = "Tunnel state changed: \"";
-
+	
 	switch (tunnelState)
 	{
 	case TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL:
 	{
-		printStr = printStr + "TRAIN_OUTSIDE_TUNNEL";
+		//LOG_TRACE("Tunnel state changed: \"TRAIN_OUTSIDE_TUNNEL\"");
 		break;
 	}
 	case TRAIN_TUNNEL_STATE::TRAIN_APROACHING_TUNNEL_ENTRANCE:
 	{
-		printStr = printStr + "TRAIN_APROACHING_TUNNEL_ENTRANCE";
+		//LOG_TRACE("Tunnel state changed: \"TRAIN_APROACHING_TUNNEL_ENTRANCE\"");
 		break;
 	}
 	case TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL:
 	{
-		printStr = printStr + "TRAIN_IN_TUNNEL";
+		//LOG_TRACE("Tunnel state changed: \"TRAIN_IN_TUNNEL\"");
 		break;
 	}
 	case TRAIN_TUNNEL_STATE::TRAIN_EXITING_TUNNEL:
 	{
-		printStr = printStr + "TRAIN_EXITING_TUNNEL";
+		//LOG_TRACE("Tunnel state changed: \"TRAIN_EXITING_TUNNEL\"");
 		break;
 	}
 	case TRAIN_TUNNEL_STATE::TRAIN_EXITED_TUNNEL:
 	{
-		printStr = printStr + "TRAIN_EXITED_TUNNEL";
+		//LOG_TRACE("Tunnel state changed: \"TRAIN_EXITED_TUNNEL\"");
 		break;
 	}
 	}
@@ -212,12 +238,9 @@ void Tunnel::ChangeTunnelStateState(TRAIN_TUNNEL_STATE tunnelState)
 	TunnelEventInfo eventInfo(TUNNEL_EVENT_TYPE::TRAIN_TUNNEL_STATE_EVENT);
 	eventInfo.state = m_trainTunnelState;
 	SendEvent(eventInfo);
-
-	printStr = printStr + "\"";
-	Serial.println(printStr);
 }
 
-void Tunnel::OnProximityChanged(bool hasObstacle, uint8_t pin)
+void Tunnel::OnProximityEvent(bool hasObstacle, uint8_t pin)
 {
 	if (m_tunnelSettings.trainDetectionMode != TRAIN_DETECTION_MODE::PROXIMITY_SENSORS)
 	{
@@ -228,7 +251,7 @@ void Tunnel::OnProximityChanged(bool hasObstacle, uint8_t pin)
 	{
 		case TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL:
 		{
-			if (pin == m_proximitySensorEntrance->GetPin())
+			if (pin == m_proximitySensorEntrance.GetPin())
 			{
 				if (hasObstacle)
 				{
@@ -240,7 +263,7 @@ void Tunnel::OnProximityChanged(bool hasObstacle, uint8_t pin)
 		}
 		case TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL:
 		{
-			if (pin == m_proximitySensorExit->GetPin())
+			if (pin == m_proximitySensorExit.GetPin())
 			{
 				if (hasObstacle)
 				{
@@ -252,7 +275,7 @@ void Tunnel::OnProximityChanged(bool hasObstacle, uint8_t pin)
 		}
 		case TRAIN_TUNNEL_STATE::TRAIN_EXITING_TUNNEL:
 		{
-			if (pin == m_proximitySensorExit->GetPin())
+			if (pin == m_proximitySensorExit.GetPin())
 			{
 				if (!hasObstacle)
 				{
@@ -265,6 +288,12 @@ void Tunnel::OnProximityChanged(bool hasObstacle, uint8_t pin)
 	}
 }
 
+void Tunnel::ProximitySensorEventThunk(void* context, const ProximitySensorInfo& info)
+{
+	static_cast<Tunnel*>(context)->OnProximityEvent(info.isObjectDetected, info.inputPin);
+}
+
+/*
 void Tunnel::OnLuminosityChanged(const PhotoresistorSensor::IPhotoresistorSensorObserver::PhotoresistorSensorEventInfo& eventInfo)
 {
 	if (m_tunnelSettings.trainDetectionMode != TRAIN_DETECTION_MODE::PHOTORESISTOR_SENSORS)
@@ -313,17 +342,18 @@ void Tunnel::OnLuminosityChanged(const PhotoresistorSensor::IPhotoresistorSensor
 		}
 	}
 }
+//*/
 
 void Tunnel::TurnOnLights()
 {
 	digitalWrite(m_tunnelSettings.pin_mosfet_gate_lights, HIGH);
-	Serial.println("Lights ON");
+	//LOG_TRACE("Lights ON");
 }
 
 void Tunnel::TurnOffLights()
 {
 	digitalWrite(m_tunnelSettings.pin_mosfet_gate_lights, LOW);
-	Serial.println("Lights OFF");
+	//LOG_TRACE("Lights OFF");
 }
 
 void Tunnel::StartStopMonitoringTunnelEntrances(bool shouldMonitorTunnelEntrances)
@@ -331,24 +361,31 @@ void Tunnel::StartStopMonitoringTunnelEntrances(bool shouldMonitorTunnelEntrance
 	m_shouldMonitorTunnelEntrances = shouldMonitorTunnelEntrances;
 	if (m_shouldMonitorTunnelEntrances)
 	{
-		Serial.println("Tunnel setting changed: START monitoring");
+		//Serial.println("Tunnel setting changed: START monitoring");
 	}
 	else
 	{
-		Serial.println("Tunnel setting changed: STOP monitoring");
+		//Serial.println("Tunnel setting changed: STOP monitoring");
 	}
 }
 
+/*
 void Tunnel::RegisterTunnelObserver(ITunnelObserver* tunnelObserver)
 {
 	m_tunnelObserver = tunnelObserver;
 }
-
+//*/
 
 void Tunnel::SendEvent(const TunnelEventInfo& eventInfo)
 {
+	/*
 	if (m_tunnelObserver)
 	{
 		m_tunnelObserver->OnTunnelEvent(eventInfo);
+	}
+	//*/
+	if (m_handler)
+	{
+		m_handler(m_context, eventInfo);
 	}
 }

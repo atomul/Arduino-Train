@@ -52,33 +52,33 @@ void Tank::SetupRemote()
 void Tank::ChangeTunnelStateState(TRAIN_TUNNEL_STATE tunnel_state)
 {
 	m_train_tunnel_state = tunnel_state;
-	Serial.print("Tunnel state changed: \"");
+	Serial.print(F("Tunnel state changed: \""));
 	
 	switch (tunnel_state)
 	{
 		case TRAIN_TUNNEL_STATE::TRAIN_OUTSIDE_TUNNEL:
 		{
-			Serial.print("TRAIN_OUTSIDE_TUNNEL");
+			Serial.print(F("TRAIN_OUTSIDE_TUNNEL"));
 			break;
 		}
 		case TRAIN_TUNNEL_STATE::TRAIN_APROACHING_TUNNEL_ENTRANCE:
 		{
-			Serial.print("TRAIN_APROACHING_TUNNEL_ENTRANCE");
+			Serial.print(F("TRAIN_APROACHING_TUNNEL_ENTRANCE"));
 			break;
 		}
 		case TRAIN_TUNNEL_STATE::TRAIN_IN_TUNNEL:
 		{
-			Serial.print("TRAIN_IN_TUNNEL");
+			Serial.print(F("TRAIN_IN_TUNNEL"));
 			break;
 		}
 		case TRAIN_TUNNEL_STATE::TRAIN_EXITING_TUNNEL:
 		{
-			Serial.print("TRAIN_EXITING_TUNNEL");
+			Serial.print(F("TRAIN_EXITING_TUNNEL"));
 			break;
 		}
 		case TRAIN_TUNNEL_STATE::TRAIN_EXITED_TUNNEL:
 		{
-			Serial.print("TRAIN_EXITED_TUNNEL");
+			Serial.print(F("TRAIN_EXITED_TUNNEL"));
 			break;
 		}
 	}
@@ -347,7 +347,7 @@ void Tank::Update()
 void Tank::OnLightsOverrideChanged(bool areLightsOverridden)
 {
 	m_areLightsOverridden = areLightsOverridden;
-	Serial.println((m_areLightsOverridden == true) ? "Lights manual override ON." : "Lights manual override OFF.");
+	Serial.println((m_areLightsOverridden == true) ? F("Lights manual override ON.") : F("Lights manual override OFF."));
 }
 
 void Tank::OnChangeTrainDetectionMode()
@@ -355,12 +355,12 @@ void Tank::OnChangeTrainDetectionMode()
 	if (m_train_detection_mode == TRAIN_DETECTION_MODE::TRAIN_DETECTION_MODE_PHOTORESISTORS)
 	{
 		m_train_detection_mode = TRAIN_DETECTION_MODE::TRAIN_DETECTION_MODE_PROXIMITY_SENSORS;
-		Serial.println("Train detection mode changed to PROXIMITY sensors");
+		Serial.println(F("Train detection mode changed to PROXIMITY sensors"));
 	}
 	else if (m_train_detection_mode == TRAIN_DETECTION_MODE::TRAIN_DETECTION_MODE_PROXIMITY_SENSORS)
 	{
 		m_train_detection_mode = TRAIN_DETECTION_MODE::TRAIN_DETECTION_MODE_PHOTORESISTORS;
-		Serial.println("Train detection mode changed to PHOTORESISTOR sensors");
+		Serial.println(F("Train detection mode changed to PHOTORESISTOR sensors"));
 	}		
 }
 
@@ -385,10 +385,10 @@ void Tank::TryToggleLights(LIGHTS_MODE mode)
 void Tank::ToggleLights(LIGHTS_MODE mode)
 {
 	(mode == LIGHTS_MODE::LIGHTS_ON) ? digitalWrite(k_pin_mosfet_gate, HIGH) : digitalWrite(k_pin_mosfet_gate, LOW);
-	Serial.print("Lights: \"");
-	Serial.print((mode == LIGHTS_MODE::LIGHTS_ON) ? "ON" : "OFF");
-	Serial.print("\"");
-	Serial.println("");
+	Serial.print(F("Lights: \""));
+	Serial.print((mode == LIGHTS_MODE::LIGHTS_ON) ? F("ON") : F("OFF"));
+	Serial.print(F("\""));
+	Serial.println(F(""));
 }
 
 void Tank::OnLightSensitivityChanged(unsigned short int lightDifferenceThreshold)

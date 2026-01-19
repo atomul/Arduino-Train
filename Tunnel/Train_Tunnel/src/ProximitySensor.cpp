@@ -2,9 +2,17 @@
 
 #include <Arduino.h>
 
+#include "macro-logger/MacroLogger.h"
 
-#define FAR_VALUE HIGH
-#define CLOSE_VALUE LOW
+ProximitySensor::ProximitySensor()
+	: ProximitySensor(INVALID_PIN)
+{
+}
+ProximitySensor::ProximitySensor(const ProximitySensorSettings& settings)
+	: ProximitySensor(settings.pin, settings.threshold)
+{
+	m_objectInProximityValue = settings.objectInProximityValue;
+}
 ProximitySensor::ProximitySensor(uint8_t inputPin)
 	: ProximitySensor(inputPin, 0)
 {
@@ -13,35 +21,58 @@ ProximitySensor::ProximitySensor(uint8_t inputPin)
 ProximitySensor::ProximitySensor(uint8_t inputPin, unsigned int threshold)
 	: m_pin(inputPin)
 	, m_threshold(threshold)
-	, m_hasObstacle(false)
+	, m_objectDetected(false)
 	, m_lastChangeTime(0)
 	, m_lastTimeSaved(false)
-{
-	pinMode(m_pin, INPUT);
-}
-
-ProximitySensor::ProximitySensor(const ProximitySensor& rhs)
+	, m_objectInProximityValue(OBJECT_IN_PROXIMITY_VALUE)
+	, m_customInfo(nullptr)
+	, m_firstRead(true)
 {
 }
 
 ProximitySensor::~ProximitySensor()
 {
-	delete m_proximityObserver;
-	m_proximityObserver = NULL;
+}
+
+void ProximitySensor::SetSettings(const ProximitySensorSettings& settings)
+{
+	m_pin = settings.pin;
+	m_threshold = settings.threshold;
+	m_objectInProximityValue = settings.objectInProximityValue;
+	m_customInfo = settings.customInfo;
+}
+
+void ProximitySensor::Setup()
+{
+	if (m_pin != INVALID_PIN)
+	{
+		pinMode(m_pin, INPUT);
+	}
 }
 
 void ProximitySensor::Update()
 {
 	int sensorValue = digitalRead(m_pin);
+
+	//LOG_TRACE("%d - %d\n", m_pin, sensorValue);
+
 	bool hasObstacle = false;
-	if (sensorValue == CLOSE_VALUE)
+	if (sensorValue == m_objectInProximityValue)
 	{
 		hasObstacle = true;
+	}
+	//LOG_TRACE("%d - %d\n", m_pin, hasObstacle);
+
+	if (m_firstRead)
+	{
+		m_objectDetected = hasObstacle;
+		m_firstRead = !m_firstRead;
+		return;
 	}
 
 	unsigned long currentTime = millis();
 
-	if (hasObstacle != m_hasObstacle)
+	if (hasObstacle != m_objectDetected)
 	{
 		if (m_lastTimeSaved == false)
 		{
@@ -56,28 +87,34 @@ void ProximitySensor::Update()
 		//*/
 		if ((currentTime - m_lastChangeTime) >= m_threshold)
 		{
-			m_hasObstacle = hasObstacle;
+			m_objectDetected = hasObstacle;
 			m_lastTimeSaved = false;
 
-			OnProximityChanged(m_hasObstacle);
+			SendEvent(m_objectDetected);
 		}
 	}
 }
 
 bool ProximitySensor::HasObstacle()
 {
-	return m_hasObstacle;
+	return m_objectDetected;
 }
 
-void ProximitySensor::RegisterProximitySensorObserver(IProximitySensorObserver* observer)
+void ProximitySensor::SetListener(ProximitySensorHandler handler, void* context)
 {
-	m_proximityObserver = observer;
+	m_handler = handler;
+	m_context = context;
 }
 
-void ProximitySensor::OnProximityChanged(bool hasObstacle)
+void ProximitySensor::SendEvent(bool isObjectDetected)
 {
-	if (m_proximityObserver)
+	if (m_handler)
 	{
-		m_proximityObserver->OnProximityChanged(hasObstacle, m_pin);
+		ProximitySensorInfo info;
+		info.inputPin = m_pin;
+		info.isObjectDetected = isObjectDetected;
+		info.customInfo = m_customInfo;
+
+		m_handler(m_context, info);
 	}
 }

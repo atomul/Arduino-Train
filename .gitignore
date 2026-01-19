@@ -35,3 +35,9 @@
 *.ipch
 Tunnel/Train_Tunnel/__vm/
 Tunnel/Train_Tunnel/obj/
+*.vsidx
+*.wsuo
+Tunnel/Train_Tunnel/.vs/Train_Tunnel/v18/DocumentLayout.backup.json
+Tunnel/Train_Tunnel/.vs/Train_Tunnel/v18/DocumentLayout.json
+.vs/VSWorkspaceState.json
+.vs/Arduino-Train.slnx/v18/DocumentLayout.json

@@ -1,4 +1,5 @@
 #include "Utilities.h"
+#include <string.h>
 
 bool IsAnalogPin(uint8_t pin)
 {

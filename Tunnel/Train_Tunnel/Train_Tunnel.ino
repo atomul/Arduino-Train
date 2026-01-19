@@ -1,45 +1,61 @@
-/*
-  Blink
-  Turns on an LED on for one second, then off for one second, repeatedly.
+//#include "src/Train.h"
+//#include "src/Logger.h"
 
-  Most Arduinos have an on-board LED you can control. On the Uno and
-  Leonardo, it is attached to digital pin 13. If you're unsure what
-  pin the on-board LED is connected to on your Arduino model, check
-  the documentation at http://arduino.cc
+#include "src/SystemController.h"
+#include "src/macro-logger/MacroLogger.h"
 
-  This example code is in the public domain.
+//Train* k_train;
 
-  modified 8 May 2014
-  by Scott Fitzgerald
- */
-
-//#include <Servo.h>
-//#include "src/Tank.h"
-#include "src/Train.h"
-#include "src/Online.h"
-
-//Tank* k_tank;
-Train* k_train;
-
-Online::Train* k_train2 = new Online::Train();
+SystemController g_systemController;
 
 // the setup function runs once when you press reset or power the board
 void setup() {
-	Serial.println("");
-	Serial.println("--------------------");
-	Serial.println("Starting program.");
-	Serial.println("--------------------");
 
-	//k_tank = new Tank();
-	k_train = new Train();
+	//Logger::instance().begin(Serial, 250, 64, Logger::DropOldest);
 
-	k_train2 = new Online::Train();
+	Serial.begin(9600);
+	Logger::set_level(Logger::Level::TRACE);
+	
+
+	////////////////////////////////////////////////////////////////////////////////
+
+	//delay(2000);
+
+	//Logger::instance().log(F("--------------------"));
+	//Logger::instance().log(F("Starting program..."));
+	//Logger::instance().log(F("--------------------"));
+
+	///*
+	//Serial.println(F(""));
+	//Serial.println(F(""));
+	//Serial.println(F("--------------------"));
+	//Serial.println(F("Starting program."));
+	//Serial.println(F("--------------------"));	
+	//Serial.flush();
+	////*/
+
+	////k_tank = new Tank();
+	//k_train = new Train();
+	////Serial.flush();
+
+	////Serial.println(F("new Train done."));
+	//Logger::instance().log(F("new Train done."));
+
+	Serial.println(F(""));
+
+	LOG_INFO("--------------------");
+	LOG_INFO("Starting program.");
+	LOG_INFO("--------------------");
+	LOG_INFO("");
+
+	g_systemController.Setup();
 }
 
 // the loop function runs over and over again forever
 void loop() {
-	//k_tank->Update();
-	k_train->Update();
+	//Logger::instance().update();
 
-	k_train2->Update();
+	//k_train->Update();
+
+	g_systemController.Update();
 }

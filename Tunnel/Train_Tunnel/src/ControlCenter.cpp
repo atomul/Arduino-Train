@@ -1,140 +1,116 @@
 #include <Arduino.h>
 
 #include "ControlCenter.h"
-#include "Button.h"
 
-const uint8_t k_pin_button_settings = 2;
-const unsigned long k_button_enable_holdThreshold = 3000;
+#include "_Config.h"
 
-const uint8_t k_pin_throttle_light_sensitivity = A2;
-const uint8_t k_throttle_threshold = 2;
+#include "macro-logger/MacroLogger.h"
 
-const uint8_t k_pin_button_toggle_tunnel_detection = 5;
-
-const uint8_t k_pin_button_test = 13;
-
-bool IsButtonEnable(uint8_t buttonPin)
-{
-	return (k_pin_button_settings == buttonPin);
-}
+//const uint8_t k_pin_button_settings = 2;
+//const uint8_t k_pin_button_toggle_tunnel_detection = 5;
+const uint8_t k_pin_button_test = config::control_center::PIN_BUTTON_TEST;
 
 ControlCenter::ControlCenter()
+//: m_buttonSettings(k_pin_button_settings)
+//, m_buttonEnableTunnelDetection(k_pin_button_toggle_tunnel_detection)
+    : m_buttonTest(k_pin_button_test)
 {
-	m_areLightsOverridden = false;
-	m_isTunnelDetectionOn = false;
-
-	m_buttonSettings = new Button(k_pin_button_settings, k_button_enable_holdThreshold);
-	m_buttonEnableTunnelDetection = new Button(k_pin_button_toggle_tunnel_detection, 60000);
-	m_buttonTest = new Button(k_pin_button_test, 60000);
-	m_throttle = new Throttle(k_pin_throttle_light_sensitivity, k_throttle_threshold);
-	
-	m_buttonSettings->RegisterButtonObserver(this);
-	m_buttonEnableTunnelDetection->RegisterButtonObserver(this);
-	m_buttonTest->RegisterButtonObserver(this);
-	m_throttle->RegisterObserver(this);
 }
 
 ControlCenter::~ControlCenter()
 {
-	delete m_buttonSettings;
-	m_buttonSettings = NULL;
 
-	delete m_buttonEnableTunnelDetection;
-	m_buttonEnableTunnelDetection = NULL;
+}
 
-	delete m_buttonTest;
-	m_buttonTest = NULL;
+void ControlCenter::Setup()
+{
+    ButtonSettings settings;
+    
+    /*
+    settings.enabledEvents = BUTTON_EVENT_MASK::EVENT_SWITCH | BUTTON_EVENT_MASK::EVENT_CLICKS | BUTTON_EVENT_MASK::EVENT_HOLD_RELEASE;
+    m_buttonSettings.SetSettings(settings);
+    //*/
 
-	delete m_throttle;
-	m_throttle = NULL;
+    /*
+    settings.enabledEvents = BUTTON_EVENT_MASK::EVENT_SWITCH;
+    m_buttonEnableTunnelDetection.SetSettings(settings);
+    //*/
+
+    settings.enabledEvents = BUTTON_EVENT_MASK::EVENT_CLICKS;
+    m_buttonTest.SetSettings(settings);
+    
+    //m_buttonSettings.SetListener(&ControlCenter::ButtonEventThunk, this);
+    //m_buttonEnableTunnelDetection.SetListener(&ControlCenter::ButtonEventThunk, this);
+    m_buttonTest.SetListener(&ControlCenter::ButtonEventThunk, this);
+}
+
+void ControlCenter::SetListener(ControlCenterHandler handler, void* context)
+{
+    m_handler = handler;
+    m_context = context;
 }
 
 void ControlCenter::Update()
 {
-	m_buttonSettings->Update();
-	m_buttonEnableTunnelDetection->Update();
-	m_buttonTest->Update();
-	m_throttle->Update();
-}
-
-void ControlCenter::RegisterObserver(IControlCenterObserver * observer)
-{
-	m_observer = observer;
+    //m_buttonSettings.Update();
+    //m_buttonEnableTunnelDetection.Update();
+    m_buttonTest.Update();
 }
 
 void ControlCenter::OnButtonEvent(uint32_t buttonId, const ButtonEventInfo& buttonEventInfo)
 {
-	switch (buttonEventInfo.m_buttonEventType)
-	{
-		case BUTTON_EVENT_TYPE::BUTTON_SWITCH:
-		{
-			if (buttonId == m_buttonSettings->GetPin())
-			{
-				if (m_areLightsOverridden)
-				{
-					if (buttonEventInfo.m_switchState == BUTTON_SWITCH_STATE::BUTTON_SWITCH_STATE_ON)
-					{
-						m_observer->OnSwitchLightsOn();
-					}
-					else if (buttonEventInfo.m_switchState == BUTTON_SWITCH_STATE::BUTTON_SWITCH_STATE_OFF)
-					{
-						m_observer->OnSwitchLightsOff();
-					}
-				}
-			}
-			else if (buttonId == m_buttonEnableTunnelDetection->GetPin())
-			{
-				m_isTunnelDetectionOn = !m_isTunnelDetectionOn;
-				if (m_isTunnelDetectionOn)
-				{
-					m_observer->OnSwitchTunnelDetectionOn();
-				}
-				else
-				{
-					m_observer->OnSwitchTunnelDetectionOff();
-				}
-			}
-			break;
-		}
-		case BUTTON_EVENT_TYPE::BUTTON_CLICKS:
-		{
-			Serial.println("Btn clicked:");
-			Serial.println(buttonId);
-			Serial.println(m_buttonTest->GetPin());
-			if (buttonId == m_buttonTest->GetPin())
-			{
-				if (buttonEventInfo.m_numberOfClicks == 1)
-				{
-					m_observer->OnTestButtonClick();
-				}
-			}
+    char buttonEventTypeBuffer[24]; // adjust size if needed
+    strncpy_P(buttonEventTypeBuffer, (PGM_P)ButtonEventTypeToText(buttonEventInfo.m_buttonEventType), sizeof(buttonEventTypeBuffer));
+    buttonEventTypeBuffer[sizeof(buttonEventTypeBuffer) - 1] = '\0';
 
-			else if (buttonId == m_buttonSettings->GetPin())
-			{
-				if (buttonEventInfo.m_numberOfClicks == 2)
-				{
-					m_observer->OnChangeTrainDetectionMode();
-				}
-			}
+    //LOG_INFO("Button event: %s, Id: %d, clicks: %d", buttonEventTypeBuffer, buttonId, buttonEventInfo.m_numberOfClicks);
+    LOG_INFO("Button event: %s, Id: %" PRIu32 ", clicks: %u",
+        buttonEventTypeBuffer,
+        buttonId,
+        (unsigned int)buttonEventInfo.m_numberOfClicks);
 
-			break;
-		}
-		case BUTTON_EVENT_TYPE::BUTTON_HOLD_RELEASE:
-		{
-			if (buttonId == k_pin_button_settings)
-			{
-				m_areLightsOverridden = !m_areLightsOverridden;
-				m_observer->OnLightsOverrideChanged(m_areLightsOverridden);
-			}
-			break;
-		}
-	}
+    switch (buttonEventInfo.m_buttonEventType)
+    {
+    case BUTTON_EVENT_TYPE::BUTTON_SWITCH:
+    {
+        /*
+        if (buttonId == m_buttonSettings.GetPin())
+        {
+            ControlCenterEventInfo controlCenterEventInfo;
+            m_handler(m_context, ControlCenterEvent::TunnelLightDetectionChanged, controlCenterEventInfo);            
+        }
+        else if (buttonId == m_buttonEnableTunnelDetection.GetPin())
+        {
+            ControlCenterEventInfo controlCenterEventInfo;
+            m_handler(m_context, ControlCenterEvent::TunnelTrainDetectionChanged, controlCenterEventInfo);
+        }
+        //*/
+        break;
+    }
+    case BUTTON_EVENT_TYPE::BUTTON_CLICKS:
+    {
+        if (buttonId == m_buttonTest.GetPin())
+        {
+            if (buttonEventInfo.m_numberOfClicks == 1 || buttonEventInfo.m_numberOfClicks == 2)
+            {
+                ControlCenterEventInfo controlCenterEventInfo;
+                m_handler(m_context, ControlCenterEvent::TestButtonClick, controlCenterEventInfo);
+            }
+        }
+        break;
+    }
+    };
+    /*
+    Serial.print(F("Button event: "));
+    PrintButtonEventType(buttonEventInfo.m_buttonEventType);
+    Serial.print(F(" ID: "));
+    Serial.print(buttonId);
+    Serial.print(F(" clicks: "));
+    Serial.println(buttonEventInfo.m_numberOfClicks);
+    //*/
 }
 
-void ControlCenter::OnThrottleChange(uint32_t value, uint32_t throttleId)
+void ControlCenter::ButtonEventThunk(void* context, uint8_t buttonId, const ButtonEventInfo& buttonEventInfo)
 {
-	if (throttleId == k_pin_throttle_light_sensitivity)
-	{
-		m_observer->OnLightSensitivityChanged(value);
-	}
+    static_cast<ControlCenter*>(context)->OnButtonEvent(buttonId, buttonEventInfo);
 }
