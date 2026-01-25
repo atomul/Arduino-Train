@@ -44,11 +44,16 @@ void setup() {
 	Serial.println(F(""));
 
 	LOG_INFO("--------------------");
-	LOG_INFO("Starting program.");
+	LOG_INFO("Starting program....");
 	LOG_INFO("--------------------");
 	LOG_INFO("");
 
 	g_systemController.Setup();
+
+	LOG_INFO("--------------------");
+	LOG_INFO("Started program.");
+	LOG_INFO("--------------------");
+	LOG_INFO("");
 }
 
 // the loop function runs over and over again forever

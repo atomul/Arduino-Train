@@ -73,6 +73,7 @@ public:
 	virtual void Update();
 
 	bool HasObstacle();
+	bool IsObjectDetected();
 
 	void SetListener(ProximitySensorHandler handler, void* context);
 

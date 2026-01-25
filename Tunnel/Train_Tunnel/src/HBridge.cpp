@@ -27,6 +27,13 @@ void HBridgeMotorController::Update()
 		{
 			unsigned long currentTime = millis();
 			unsigned long elapsedTime = currentTime - m_initialSpeedTimeStart;
+
+			// clamp it for safety
+			if (elapsedTime > m_targetSpeedTimeInterval)
+			{
+				elapsedTime = m_targetSpeedTimeInterval;
+			}
+
 			static unsigned long lastElapsedTime = 0;
 
 			bool shouldPrint = false;
@@ -128,6 +135,11 @@ void HBridgeMotorController::SetChangeSpeedAutomatically(bool shouldChangeSpeedA
 {
 	m_changeSpeedAutomatically = shouldChangeSpeedAutomatically;
 }
+uint8_t HBridgeMotorController::GetCurrentSpeedPercentage()
+{
+	// rounded instead of floored
+	return (uint8_t)((m_speed * 100UL + 127) / 255);
+}
 bool HBridgeMotorController::IsEnabled() { return m_isEnabled; }
 
 void HBridgeMotorController::Enable() { m_isEnabled = true; }
@@ -144,4 +156,20 @@ void HBridgeMotorController::AssignHBridgeChannel(const HBridge_L293D::HBridge_L
 {
 	m_hBridgeChannelSettings = channelSettings;
 	m_hBridgeChannelSettings.SetupPins();
+}
+
+void HBridgeMotorController::MatchSpeed(const HBridgeMotorController& hBridge)
+{
+	m_direction = hBridge.m_direction;
+	m_speed = hBridge.m_speed;
+	m_isEnabled = hBridge.m_isEnabled;
+	m_speedChangeBehavior = hBridge.m_speedChangeBehavior;
+	m_changeSpeedAutomatically = hBridge.m_changeSpeedAutomatically;
+	m_targetSpeedTimeInterval = hBridge.m_targetSpeedTimeInterval;
+	m_initialSpeedTimeStart = hBridge.m_initialSpeedTimeStart;
+	m_initialSpeed = hBridge.m_initialSpeed;
+	m_targetSpeed = hBridge.m_targetSpeed;
+	m_currentSpeed = hBridge.m_currentSpeed;
+	m_isIncreasingSpeed = hBridge.m_isIncreasingSpeed;
+	m_speedStep = hBridge.m_speedStep;
 }

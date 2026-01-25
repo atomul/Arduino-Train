@@ -21,11 +21,29 @@ enum class TrackSectionState : uint8_t
 	UNKNOWN = 0,
 	TRAIN_OUTSIDE_SECTION,
 	TRAIN_ENTERING_SECTION,
-	TRAIN_FULLY_INSIDE_SECTION,
 	TRAIN_REACHED_CHECKPOINT,
 	TRAIN_EXITING_SECTION,
 	TRAIN_FULLY_EXITED_SECTION
 };
+const char* TrackSectionStateToStr(TrackSectionState state);
+
+enum class TrackSectionEventType : uint8_t
+{
+	CHANGE_STATE,
+	OTHER,
+	ALERT
+	// ALERT_EXITED_WITHOUT_ENTERING
+	// ALERT_EXITED_WITHOUT_FINISHING_ENTERING
+	// ALERT_FULLY_INSIDE_AFTER_FULLY_EXITED_AND_OUTSIDE - problem is actually ALERT_EXITED_WITHOUT_ENTERING
+	// ALERT_CHECKPOINT_WITHOUT_ENTERING_WHILE_BEING_OUTSIDE
+};
+
+enum class TrackSectionAlertType : uint8_t
+{
+	NONE,
+	TRAIN_ENTERED_WHILE_SECTION_OCCUPIED
+};
+const char* TrackSectionAlertTypeToStr(TrackSectionAlertType state);
 
 struct TrackSectionEventInfo
 {
@@ -34,12 +52,25 @@ struct TrackSectionEventInfo
 		, state(TrackSectionState::UNKNOWN)
 		, checkpointId(0)
 		, numberOfCheckpoints(0)
+		, eventType(TrackSectionEventType::CHANGE_STATE)
+		, isTrainFullyInside(false)
+		, alertType(TrackSectionAlertType::NONE)
 	{}
 
 	uint8_t sectionId;
 	TrackSectionState state;
 	uint8_t checkpointId;
 	uint8_t numberOfCheckpoints;
+	TrackSectionEventType eventType;
+	bool isTrainFullyInside;
+	TrackSectionAlertType alertType;
+};
+
+enum class TrackSectionOverlapOwner : uint8_t
+{
+	None,
+	A,
+	B
 };
 
 struct TrackSectionSettings
@@ -51,7 +82,8 @@ struct TrackSectionSettings
 		, numberOfCheckpoints(0)
 		, trackSectionRole(TrackSectionRole::Normal)
 	{
-		for (uint8_t i = 0; i < config::track_sections::MAX_TRACK_SECTIONS_CHECKPOINTS; ++i) {
+		for (uint8_t i = 0; i < config::track_sections::MAX_TRACK_SECTIONS_CHECKPOINTS; ++i)
+		{
 			pinsCheckpoints[i] = INVALID_PIN;
 		}
 	}
@@ -63,6 +95,8 @@ struct TrackSectionSettings
 		, pinProximitySensorExit(other.pinProximitySensorExit)
 		, numberOfCheckpoints(other.numberOfCheckpoints)
 		, trackSectionRole(other.trackSectionRole)
+		, pinPosOverlapOwner(INVALID_PIN)
+		, pinNegOverlapOwner(INVALID_PIN)
 	{
 		for (uint8_t i = 0; i < config::track_sections::MAX_TRACK_SECTIONS_CHECKPOINTS; ++i)
 		{
@@ -77,6 +111,8 @@ struct TrackSectionSettings
 		LOG_TRACE("pinProximitySensorExit: %d", pinProximitySensorExit);
 		LOG_TRACE("numberOfCheckpoints: %d", numberOfCheckpoints);
 		LOG_TRACE("trackSectionRole: %d", (uint8_t)trackSectionRole);
+		LOG_TRACE("pinPosOverlapOwner: %d", (uint8_t)pinPosOverlapOwner);
+		LOG_TRACE("pinNegOverlapOwner: %d", (uint8_t)pinNegOverlapOwner);
 		for (int i = 0; i < numberOfCheckpoints; i++)
 		{
 			LOG_TRACE("pinsCheckpoints[%d] = \"%d\"", i, pinsCheckpoints[i]);
@@ -90,6 +126,8 @@ struct TrackSectionSettings
 	uint8_t pinsCheckpoints[config::track_sections::MAX_TRACK_SECTIONS_CHECKPOINTS];
 	uint8_t numberOfCheckpoints;
 	TrackSectionRole trackSectionRole;
+	uint8_t pinPosOverlapOwner;
+	uint8_t pinNegOverlapOwner;
 };
 
 using TrackSectionHandler = void(*)(void* context, const TrackSectionEventInfo& info);
@@ -104,7 +142,9 @@ public:
 	void Update();
 
 	void SendEvent(const TrackSectionEventInfo& info);
-	void SendEvent(TrackSectionState state);
+	void SendEvent(const TrackSectionEventType& eventType);
+	
+	void SendAlert(const TrackSectionAlertType& alertType);
 
 	void ChangeState(TrackSectionState state);
 
@@ -113,12 +153,54 @@ public:
 
 	void SetListener(TrackSectionHandler handler, void* context);
 
+	bool IsOccupied() { return m_isOccupied; }
+	bool IsOccupied_checkRawOccupancy();
+
+	bool IsOverlapSection() { return (m_settings.trackSectionRole == TrackSectionRole::Overlap); }
+	
+	bool IsReserved();
+	void Reserve(uint8_t trackSectionId);
+	void ReleaseReservation();
+
+	int8_t GetReservedByTrackSectionId();
+	bool IsReservedByTrackSectionId(uint8_t trackSectionId);
+
+	void OnTrainFullyInside();
+
+	void StopWithCoast();
+	void StopWithBreak();
+
+	void SetOverlapSectionOwner(TrackSectionOverlapOwner owner);
+
+	bool DidReachLastSection()
+	{
+		if (m_checkpointReached == m_numberOfCheckpoints - 1)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	uint8_t GetSectionId() { return m_sectionId; }
+
+	void SetTargetSpeedPercentage(uint8_t speedPercentage, unsigned long timeIntervalMiliseconds);
+	uint8_t GetCurrentSpeedPercentage();
+
+	const TrackSectionSettings& GetSettigns() { return m_settings; }
+
+	uint8_t GetNumberOfCheckpoints() { return m_numberOfCheckpoints; }
+	uint8_t GetCheckpointReached() { return m_checkpointReached; }
+	
+	void MatchSpeed(const TrackSection& section);
+	const HBridgeMotorController& GetHBridge();
+
 private:
 	bool m_isOccupied;
 	bool m_isReserved;
 	bool m_isTrainFullyInside;
 	uint8_t m_checkpointReached;
-
+	bool m_reservedByTrackSectionId;
 	TrackSectionState m_state;
 
 	uint8_t m_sectionId;
@@ -134,4 +216,10 @@ private:
 
 	void* m_context = nullptr;
 	TrackSectionHandler m_handler = nullptr;
+
+	unsigned long m_lastTime;
+	bool m_savedTime;
+	TrackSectionAlertType m_alert;
+
+
 };

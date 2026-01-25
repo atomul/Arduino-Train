@@ -47,6 +47,15 @@ void ProximitySensor::Setup()
 	if (m_pin != INVALID_PIN)
 	{
 		pinMode(m_pin, INPUT);
+
+		// ToDo maybe do this on an init?
+		// do the same for Buttons
+		int sensorValue = digitalRead(m_pin);
+		if (sensorValue == m_objectInProximityValue)
+		{
+			m_objectDetected = true;
+		}
+		//LOG_WARNING("pin %d, obstacle %d", m_pin, m_objectDetected);
 	}
 }
 
@@ -63,17 +72,20 @@ void ProximitySensor::Update()
 	}
 	//LOG_TRACE("%d - %d\n", m_pin, hasObstacle);
 
+	/*
 	if (m_firstRead)
 	{
 		m_objectDetected = hasObstacle;
 		m_firstRead = !m_firstRead;
 		return;
 	}
+	//*/
 
 	unsigned long currentTime = millis();
 
 	if (hasObstacle != m_objectDetected)
 	{
+		//LOG_WARNING("hasObstacle != m_objectDetected == true");
 		if (m_lastTimeSaved == false)
 		{
 			m_lastChangeTime = currentTime;
@@ -96,6 +108,11 @@ void ProximitySensor::Update()
 }
 
 bool ProximitySensor::HasObstacle()
+{
+	return m_objectDetected;
+}
+
+bool ProximitySensor::IsObjectDetected()
 {
 	return m_objectDetected;
 }

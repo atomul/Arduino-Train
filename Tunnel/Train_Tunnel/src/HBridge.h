@@ -114,6 +114,8 @@ public:
 
 	void SetTargetSpeedPercentage(uint8_t speedPercentage, unsigned long timeInterval);
 	void SetChangeSpeedAutomatically(bool shouldChangeSpeedAutomatically);
+	
+	uint8_t GetCurrentSpeedPercentage();
 
 	bool IsEnabled();
 
@@ -122,6 +124,8 @@ public:
 
 	// ToDo 2PD: Create a struct for H-Bridge
 	void AssignHBridgeChannel(const HBridge_L293D::HBridge_L293D_Channel_Settings& channelSettings);
+
+	void MatchSpeed(const HBridgeMotorController& hBridge);
 
 private:
 	MotorDirection m_direction;

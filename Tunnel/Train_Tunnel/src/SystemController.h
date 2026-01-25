@@ -33,7 +33,11 @@ private:
 	void OnTrackSectionEvent(const TrackSectionEventInfo& info);
 	static void TrackSectionEventThunk(void* context, const TrackSectionEventInfo& info);
 
+	TrackSection& GetNextTrackSection(uint8_t currentId);
+
 	ControlCenter m_controlCenter;
 	Tunnel m_tunnel;
 	TrackSection m_trackSections[config::track_sections::MAX_TRACK_SECTIONS];
+
+	uint8_t m_numberOfTrackSections;
 };
