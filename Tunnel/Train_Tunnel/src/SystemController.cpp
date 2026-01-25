@@ -35,8 +35,10 @@ void SystemController::Setup()
 	SetupTunnel();
 	SetupTrackSections();
 
+	/*
 	pinMode(config::track_sections::PIN_RELAY_1X, INPUT);
 	pinMode(config::track_sections::PIN_RELAY_X2, INPUT);
+	//*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +92,9 @@ void SystemController::SetupTrackSections()
 	trackSectionSettings.numberOfCheckpoints = config::track_sections::NUMBER_OF_CHECKPOINTS_TRACK_SECTION_1;
 	trackSectionSettings.pinProximitySensorEntrance = config::track_sections::PIN_TRACK_SECTION_1_PROXIMITY_SENSOR_ENTRANCE;
 	trackSectionSettings.pinProximitySensorExit = config::track_sections::PIN_TRACK_SECTION_1_PROXIMITY_SENSOR_EXIT;
+
+	trackSectionSettings.pinPosOverlapOwner = config::track_sections::PIN_RELAY_POSITIVE;
+	trackSectionSettings.pinNegOverlapOwner = config::track_sections::PIN_RELAY_NEGATIVE;
 
 	for (int i = 0; i < trackSectionSettings.numberOfCheckpoints; i++)
 	{

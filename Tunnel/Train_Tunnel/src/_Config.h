@@ -72,6 +72,9 @@ namespace config
 			INVALID_PIN
 		};
 
+		constexpr uint8_t PIN_RELAY_POSITIVE = 11;
+		constexpr uint8_t PIN_RELAY_NEGATIVE = 12;
+
 		/////////////////////////
 		//// Track Section 3 ////
 		/////////////////////////
