@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "macro-logger/MacroLogger.h"
+
 HBridgeMotorController::HBridgeMotorController()
 	: m_direction(MOTOR_DIRECTION_FORWARD)
 	, m_speed(0)
@@ -29,6 +31,14 @@ void HBridgeMotorController::Update()
 			unsigned long elapsedTime = currentTime - m_initialSpeedTimeStart;
 
 			// clamp it for safety
+			/*
+			Serial.print("elapsedTime: ");
+			Serial.print(elapsedTime);
+			Serial.print(" ");
+			Serial.print("m_targetSpeedTimeInterval: ");
+			Serial.print(m_targetSpeedTimeInterval);
+			Serial.print("\n");
+			//*/
 			if (elapsedTime > m_targetSpeedTimeInterval)
 			{
 				elapsedTime = m_targetSpeedTimeInterval;
@@ -54,6 +64,15 @@ void HBridgeMotorController::Update()
 
 					if (shouldPrint)
 					{
+						LOG_INFO("elapsedTime: \"%d\"", elapsedTime);
+						LOG_INFO("m_targetSpeedTimeInterval: \"%d\"", m_targetSpeedTimeInterval);
+						LOG_INFO("m_initialSpeed: \"%d\"", m_initialSpeed);
+						LOG_INFO("m_targetSpeed: \"%d\"", m_targetSpeed);
+						LOG_INFO("nextSpeed: \"%d\"", nextSpeed);
+						LOG_INFO("-------------------------");
+						
+						/*
+						Serial.print("Elapsed: ");
 						Serial.print(elapsedTime);
 						Serial.print(" ");							
 						Serial.print(0);
@@ -67,6 +86,7 @@ void HBridgeMotorController::Update()
 						Serial.print(nextSpeed);
 						Serial.println(" ");
 						//Serial.println("==========================");
+						//*/
 					}
 				}
 			}

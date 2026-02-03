@@ -8,6 +8,7 @@
 // For ATmega328P (2KB SRAM), 80-128 is a sensible range.
 #ifndef LOGGER_BUF_SIZE
 #define LOGGER_BUF_SIZE 96
+#define LOGGER_BUF_SIZE 200
 #endif
 
 class Logger {
